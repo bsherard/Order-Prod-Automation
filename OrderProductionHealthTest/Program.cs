@@ -20,6 +20,7 @@ namespace OrderProductionHealthTest
             Exception error = null;
             String email = "qa_"+ DateTime.Now.ToUniversalTime().ToString(@"yyyy-MM-dd_HH-mm-ss-fff") +"@rhapsody.lan";
             FirefoxDriver d = null;
+            
             try
             {
                 d = new FirefoxDriver();
@@ -46,12 +47,20 @@ namespace OrderProductionHealthTest
                     throw new Exception("Receipt page not found. Found pagetype value: " + pageType);
                 }
 
-               
+                ssStream = new MemoryStream(d.GetScreenshot().AsByteArray);
             }
             catch (Exception e)
             {
                 error = e;
-                ssStream = new MemoryStream(d.GetScreenshot().AsByteArray);
+                
+                try
+                {
+                    ssStream = new MemoryStream(d.GetScreenshot().AsByteArray);
+                }
+                catch (Exception es)
+                {
+
+                }
             }
 
             try
@@ -94,18 +103,61 @@ coupon code used: RHPNOCTSTUS
 " + error.GetType().Name + @" log: 
 " + error.ToString();
 
-                Attachment att = new Attachment(ssStream, new ContentType(@"image/bmp"));
-                att.Name = "screenshot";
-                message.Attachments.Add(att);
+                if (ssStream != null)
+                {
+                    Attachment att = new Attachment(ssStream, new ContentType(@"image/bmp"));
+                    att.Name = "screenshot";
+                    message.Attachments.Add(att);
+                }
+                client.Send(message);
+            }
+            else
+            {
+                SmtpClient client = new SmtpClient();
+                client.Port = 587;
+                client.Host = "smtp.gmail.com";
+                client.EnableSsl = true;
+                client.Timeout = 20000;
+                client.DeliveryMethod = SmtpDeliveryMethod.Network;
+                client.UseDefaultCredentials = false;
+                client.Credentials = new System.Net.NetworkCredential("RhapsodyOrderNocHealthCheck@gmail.com", "brainEcosystem");
+
+                MailMessage message = new MailMessage();
+                message.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
+                message.To.Add("bsherard@rhapsody.com");
+                message.To.Add("rhapsody_noc@rhapsody.com");
+                message.Subject = "Order production health check succeeded";
+                message.From = new System.Net.Mail.MailAddress("RhapsodyOrderNocHealthCheck@gmail.com");
+                message.Body =
+@"Health check has succeeded on the order-test-1102.corp.rhapsody.com test machine.
+
+attempted user: " + email + @"
+path used: https://order.rhapsody.com/checkout/coupon
+coupon code used: RHPNOCTSTUS";
+
+                if (ssStream != null)
+                {
+                    Attachment att = new Attachment(ssStream, new ContentType(@"image/bmp"));
+                    att.Name = "screenshot";
+                    message.Attachments.Add(att);
+                }
                 client.Send(message);
             }
 
             string exceptionMessage = (error == null ) ? "No Exception" : error.Message;
 
-            using (StreamWriter writer = new StreamWriter("lastAutomationAttemptEmail.txt", false))
+            try
             {
-                writer.WriteLine(email);
-                writer.WriteLine(exceptionMessage);
+                using (StreamWriter writer = new StreamWriter("lastAutomationAttemptEmail.txt", false))
+                {
+                    writer.WriteLine(email);
+                    writer.WriteLine(exceptionMessage);
+                }
+            }
+            catch (Exception exx)
+            {
+                //not sure why but the task execution of this logging fails
+                //it works fine manually...
             }
         }
     }
