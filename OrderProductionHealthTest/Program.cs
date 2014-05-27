@@ -24,11 +24,11 @@ namespace OrderProductionHealthTest
             {
                 d = new FirefoxDriver();
                 d.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, 10));
-                d.Navigate().GoToUrl("https://order.rhapsody.com/checkout/coupon?code=RHPNOCTSTUS&email=" + email + "&cmpid=test");
-                //d.Navigate().GoToUrl("https://www.google.com/");
+                d.Navigate().GoToUrl("https://order.rhapsody.com/checkout/coupon?code=RHPNOCTSTUS&email=" + email + "&cmpid=monitor");
+                //d.Navigate().GoToUrl("https://order-int.internal.rhapsody.com/checkout/coupon?code=RHPNOCTSTUS&email=" + email + "&cmpid=monitor");
                 d.FindElement(By.Id("password")).SendKeys("password");
                 d.FindElement(By.Id("confirmpassword")).SendKeys("password");
-                d.FindElement(By.Id("contact")).Click();
+                d.FindElement(By.Id("terms")).Click();
                 d.FindElement(By.Id("accountsetupsubmit")).Click();
 
                 String pageType = "";
@@ -85,7 +85,7 @@ namespace OrderProductionHealthTest
                 message.Subject = "Order production health check failed";
                 message.From = new System.Net.Mail.MailAddress("RhapsodyOrderNocHealthCheck@gmail.com");
                 message.Body =
-@"Health check has failed.
+@"Health check has failed on the order-test-1102.corp.rhapsody.com test machine.
 
 attempted user: " + email + @"
 path used: https://order.rhapsody.com/checkout/coupon
@@ -98,6 +98,14 @@ coupon code used: RHPNOCTSTUS
                 att.Name = "screenshot";
                 message.Attachments.Add(att);
                 client.Send(message);
+            }
+
+            string exceptionMessage = (error == null ) ? "No Exception" : error.Message;
+
+            using (StreamWriter writer = new StreamWriter("lastAutomationAttemptEmail.txt", false))
+            {
+                writer.WriteLine(email);
+                writer.WriteLine(exceptionMessage);
             }
         }
     }
