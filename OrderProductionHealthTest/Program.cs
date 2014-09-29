@@ -16,21 +16,30 @@ namespace OrderProductionHealthTest
     {
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs argsuments)
+            {
+                Exception exception = (Exception)argsuments.ExceptionObject;
+                Console.WriteLine("Unhandled exception: " + exception);
+                Environment.Exit(1);
+            };
+
             MemoryStream ssStream = null;
             Exception error = null;
             String email = "qa_"+ DateTime.Now.ToUniversalTime().ToString(@"yyyy-MM-dd_HH-mm-ss-fff") +"@rhapsody.lan";
             FirefoxDriver d = null;
-            
+
+            Console.WriteLine("starting test for user: " + email);
+
             try
             {
                 d = new FirefoxDriver();
                 d.Manage().Timeouts().ImplicitlyWait(new TimeSpan(0, 0, 10));
                 d.Navigate().GoToUrl("https://order.rhapsody.com/checkout/coupon?code=RHPNOCTSTUS&email=" + email + "&cmpid=monitor");
                 //d.Navigate().GoToUrl("https://order-int.internal.rhapsody.com/checkout/coupon?code=RHPNOCTSTUS&email=" + email + "&cmpid=monitor");
-                d.FindElement(By.Id("password")).SendKeys("password");
-                d.FindElement(By.Id("confirmpassword")).SendKeys("password");
-                d.FindElement(By.Id("terms")).Click();
-                d.FindElement(By.Id("accountsetupsubmit")).Click();
+                d.FindElement(By.Id("txtPassword")).SendKeys("password");
+                d.FindElement(By.Id("txtConfirmPassword")).SendKeys("password");
+                d.FindElement(By.XPath(@"//label[@class='clearfix field-label']")).Click();
+                d.FindElement(By.XPath(@"//button[@class='btn btn-auto']")).Click();
 
                 String pageType = "";
                 WebDriverWait wait = new WebDriverWait(d, TimeSpan.FromSeconds(10));
@@ -59,7 +68,7 @@ namespace OrderProductionHealthTest
                 }
                 catch (Exception es)
                 {
-
+                    Console.WriteLine("exception taking screenshot: " + es);
                 }
             }
 
@@ -73,7 +82,7 @@ namespace OrderProductionHealthTest
             } 
             catch (Exception ex)
             {
-                //do nothing
+                Console.WriteLine("exception closing the driver and browser: " + ex);
             }
 
             if (error != null)
@@ -129,7 +138,7 @@ coupon code used: RHPNOCTSTUS
                 message.Subject = "Order production health check succeeded";
                 message.From = new System.Net.Mail.MailAddress("RhapsodyOrderNocHealthCheck@gmail.com");
                 message.Body =
-@"Health check has succeeded on the order-test-1102.corp.rhapsody.com test machine.
+@"Health check has succeeded on the orderpath-mon-1201.corp.rhapsody.com test machine.
 
 attempted user: " + email + @"
 path used: https://order.rhapsody.com/checkout/coupon
@@ -146,19 +155,13 @@ coupon code used: RHPNOCTSTUS";
 
             string exceptionMessage = (error == null ) ? "No Exception" : error.Message;
 
-            try
-            {
+           
                 using (StreamWriter writer = new StreamWriter("lastAutomationAttemptEmail.txt", false))
                 {
                     writer.WriteLine(email);
                     writer.WriteLine(exceptionMessage);
                 }
-            }
-            catch (Exception exx)
-            {
-                //not sure why but the task execution of this logging fails
-                //it works fine manually...
-            }
+           
         }
     }
 }
