@@ -16,9 +16,9 @@ namespace OrderProductionHealthTest
     {
         static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs argsuments)
+            AppDomain.CurrentDomain.UnhandledException += delegate(object sender, UnhandledExceptionEventArgs arguments)
             {
-                Exception exception = (Exception)argsuments.ExceptionObject;
+                Exception exception = (Exception)arguments.ExceptionObject;
                 Console.WriteLine("Unhandled exception: " + exception);
                 Environment.Exit(1);
             };
@@ -99,11 +99,12 @@ namespace OrderProductionHealthTest
                 MailMessage message = new MailMessage();
                 message.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
                 message.To.Add("bsherard@rhapsody.com");
+                message.To.Add("order-app-alerts@rhapsody.com");
                 message.To.Add("rhapsody_noc@rhapsody.com");
                 message.Subject = "Order production health check failed";
                 message.From = new System.Net.Mail.MailAddress("RhapsodyOrderNocHealthCheck@gmail.com");
                 message.Body =
-@"Health check has failed on the order-test-1102.corp.rhapsody.com test machine.
+@"Health check has failed on the orderpath-mon-1201.corp.rhapsody.com test machine.
 
 attempted user: " + email + @"
 path used: https://order.rhapsody.com/checkout/coupon
@@ -134,6 +135,7 @@ coupon code used: RHPNOCTSTUS
                 MailMessage message = new MailMessage();
                 message.DeliveryNotificationOptions = DeliveryNotificationOptions.OnFailure;
                 message.To.Add("bsherard@rhapsody.com");
+                message.To.Add("order-app-alerts@rhapsody.com");
                 message.To.Add("rhapsody_noc@rhapsody.com");
                 message.Subject = "Order production health check succeeded";
                 message.From = new System.Net.Mail.MailAddress("RhapsodyOrderNocHealthCheck@gmail.com");
